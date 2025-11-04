@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Invoices</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 2rem; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>My Invoices</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td>{{ invoice.property.name }}</td>
+                    <td>₹{{ invoice.amount }}</td>
+                    <td>{{ invoice.due_date|date:"Y-m-d" }}</td>
+                    <td>{{ invoice.status }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">You have no invoices.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <a href="{% url 'home' %}">Back to Map</a>
+    </div>
+</body>
+</html>

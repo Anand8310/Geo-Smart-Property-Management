@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Documents</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 2rem; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #ddd; }
+        .download-btn { background-color: #17a2b8; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>My Documents</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Uploaded On</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.description }}</td>
+                    <td>{{ doc.uploaded_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <a href="{{ doc.file.url }}" class="download-btn" target="_blank">View/Download</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">You have no documents.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <a href="{% url 'home' %}">Back to Map</a>
+    </div>
+</body>
+</html>

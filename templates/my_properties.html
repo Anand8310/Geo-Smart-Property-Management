@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}My Properties{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-3 mb-md-0 text-primary">
+            <i class="fas fa-building me-2"></i> My Properties
+        </h2>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" placeholder="Search properties..." id="propertySearch" style="max-width: 220px;">
+            <a href="{% url 'add_property' %}" class="btn btn-gradient-primary text-white fw-bold">
+                <i class="fas fa-plus-circle me-1"></i> Add New
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="text-white" style="background: linear-gradient(90deg, #4e54c8, #8f94fb);">
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Address</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="propertyTable">
+                        {% for prop in properties %}
+                        <tr class="table-row-hover">
+                            <td class="fw-semibold">
+                                {% if prop.get_category_display == "Residential" %}
+                                    <i class="fas fa-home text-success me-2"></i>
+                                {% elif prop.get_category_display == "Commercial" %}
+                                    <i class="fas fa-building text-info me-2"></i>
+                                {% elif prop.get_category_display == "Shop" %}
+                                    <i class="fas fa-store text-warning me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-villa text-primary me-2"></i>
+                                {% endif %}
+                                {{ prop.name }}
+                            </td>
+                            <td>
+                                {% if prop.get_category_display == "Residential" %}
+                                    <span class="badge bg-success">{{ prop.get_category_display }}</span>
+                                {% elif prop.get_category_display == "Commercial" %}
+                                    <span class="badge bg-info text-dark">{{ prop.get_category_display }}</span>
+                                {% elif prop.get_category_display == "Shop" %}
+                                    <span class="badge bg-warning text-dark">{{ prop.get_category_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-primary text-white">{{ prop.get_category_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ prop.address }}</td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'manage_tenants' prop.id %}">
+                                                <i class="fas fa-user-friends me-2 text-primary"></i> Manage Tenants
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'property_insights' prop.id %}">
+                                                <i class="fas fa-chart-line me-2 text-success"></i> View Insights
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'edit_property' prop.id %}">
+                                                <i class="fas fa-edit me-2 text-warning"></i> Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'manage_expenses' prop.id %}">
+                                                <i class="fas fa-wallet me-2 text-info"></i> Manage Expenses
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'manage_tour' prop.id %}">
+                                                <i class="fas fa-cube me-2 text-secondary"></i> Manage 3D Tour
+                                            </a>
+                                        </li>    
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="{% url 'delete_property' prop.id %}">
+                                                <i class="fas fa-trash-alt me-2"></i> Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="fas fa-info-circle me-2"></i> You have not added any properties yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-gradient-secondary text-white fw-bold">
+            <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Optional JS for Search Filter -->
+<script>
+    document.getElementById("propertySearch").addEventListener("keyup", function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#propertyTable tr");
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+    });
+</script>
+
+<style>
+    .table-row-hover:hover {
+        background: linear-gradient(90deg, #f0f4ff, #d9e2ff);
+        transition: 0.3s;
+    }
+
+    .btn-gradient-primary {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        border: none;
+    }
+
+    .btn-gradient-primary:hover {
+        background: linear-gradient(90deg, #2575fc, #6a11cb);
+    }
+
+    .btn-gradient-secondary {
+        background: linear-gradient(90deg, #ff6a00, #ee0979);
+        border: none;
+    }
+
+    .btn-gradient-secondary:hover {
+        background: linear-gradient(90deg, #ee0979, #ff6a00);
+    }
+</style>
+{% endblock %}

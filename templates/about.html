@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block extra_head %}
+<style>
+.about-card {
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+.about-card h2 {
+    margin-bottom: 1rem;
+}
+.about-card h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+.about-card ul li {
+    margin-bottom: 0.8rem;
+}
+.lead {
+    font-size: 1.2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="about-card">
+        <h2 class="card-title">About Geo-Smart PMS</h2>
+        <hr>
+        <p class="lead">
+            Welcome to Geo-Smart PMS, your all-in-one platform for modern property management.
+        </p>
+        <p>
+            Our mission is to solve the biggest challenges in the real estate market by integrating advanced geospatial technology with a comprehensive management system. We aim to provide a transparent, efficient, and data-driven experience for property owners, tenants, and service vendors.
+        </p>
+
+        <h4>Our Platform</h4>
+        <p>We have built a sophisticated, multi-faceted application that includes:</p>
+        <ul>
+            <li><strong>Property Marketplace:</strong> An interactive map with advanced filters for tenants to discover properties and see nearby points of interest.</li>
+            <li><strong>Property Management System:</strong> A full suite of tools for owners and tenants to manage leases, invoices, and documents.</li>
+            <li><strong>Vendor Marketplace:</strong> A complete workflow for owners to hire and manage approved vendors for maintenance tasks.</li>
+            <li><strong>Neighborhood Insights Hub:</strong> A powerful analytics dashboard to analyze property trends and market data in real-time.</li>
+            <li><strong>Automated Onboarding System:</strong> A professional workflow for tenants to apply for properties and for owners to approve or reject them.</li>
+        </ul>
+
+        <p>
+            This project was built to demonstrate the power of integrating a GIS backend (PostgreSQL with PostGIS) with a modern web framework (Python/Django) to solve complex, real-world problems.
+        </p>
+    </div>
+</div>
+{% endblock %}

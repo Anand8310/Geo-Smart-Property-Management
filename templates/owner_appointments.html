@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Viewing Appointments{% endblock %}
+
+{% block extra_head %}
+<style>
+    .appointment-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none;
+        border-left: 5px solid #0d6efd;
+    }
+    .appointment-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .card-header {
+        background: #f8f9fa;
+        font-weight: 500;
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 0.8em;
+    }
+    .status-icon {
+        margin-right: 0.4em;
+    }
+    .btn {
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    .btn:hover {
+        opacity: 0.9;
+        transform: scale(1.03);
+    }
+    .alert-info {
+        border-left: 5px solid #17a2b8;
+        background: #eaf9fc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold"><i class="fas fa-calendar-check text-primary"></i> Viewing Appointments</h2>
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    <p class="text-muted">Review and manage viewing requests for your listed properties.</p>
+    <hr>
+
+    {% for appt in appointments %}
+        <div class="card appointment-card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div><i class="fas fa-home text-primary"></i> Request for: <strong>{{ appt.property.name }}</strong></div>
+                <span class="badge
+                    {% if appt.status == 'confirmed' %} bg-success
+                    {% elif appt.status == 'cancelled' %} bg-danger
+                    {% else %} bg-info
+                    {% endif %}">
+                    {% if appt.status == 'confirmed' %}
+                        <i class="fas fa-check-circle status-icon"></i>
+                    {% elif appt.status == 'cancelled' %}
+                        <i class="fas fa-times-circle status-icon"></i>
+                    {% else %}
+                        <i class="fas fa-hourglass-half status-icon"></i>
+                    {% endif %}
+                    {{ appt.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">
+                    <i class="fas fa-user"></i> Applicant: <strong>{{ appt.applicant.username }}</strong>
+                </h6>
+                <p class="card-text mb-3">
+                    <i class="far fa-clock"></i> <strong>Requested Date & Time:</strong> {{ appt.requested_datetime }}
+                </p>
+
+                {% if appt.status == 'pending' %}
+                    <div class="d-flex gap-2">
+                        <form action="{% url 'manage_appointment' appt.id 'confirm' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Confirm
+                            </button>
+                        </form>
+                        <form action="{% url 'manage_appointment' appt.id 'cancel' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning text-white">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info p-4 text-center">
+            <i class="fas fa-info-circle"></i> You have not received any viewing requests yet.
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

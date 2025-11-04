@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Neighborhood Insights{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    #insights-map {
+        height: 50vh;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        text-align: center;
+    }
+    .stat-card {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: default;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    .stat-card h5 {
+        color: #6c757d;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .stat-card p {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #343a40;
+        margin: 0;
+    }
+    .spinner {
+        display: none;
+        margin: 2rem auto;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #0d6efd;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center">
+        <h2>Neighborhood Insights</h2>
+        <p class="lead">Pan and zoom the map to see real-time analytics for the visible area.</p>
+    </div>
+    <hr class="my-4">
+
+    <div id="insights-map"></div>
+    <div class="spinner" id="map-loader"></div>
+
+    <div class="stats-grid mt-4">
+        <div class="stat-card">
+            <h5>Properties in View</h5>
+            <p id="total-properties">--</p>
+        </div>
+        <div class="stat-card">
+            <h5>Avg. Sale Price</h5>
+            <p id="avg-sale-price">--</p>
+        </div>
+        <div class="stat-card">
+            <h5>Avg. Monthly Rent</h5>
+            <p id="avg-rent-price">--</p>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h4 class="text-center">Property Categories in View</h4>
+        <canvas id="categoryChart" style="height:300px;"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('insights-map').setView([12.9716, 77.5946], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const loader = document.getElementById('map-loader');
+    let categoryChart;
+    let markersLayer = L.layerGroup().addTo(map);
+
+    function formatCurrency(value) {
+        return '₹' + Math.round(value).toLocaleString();
+    }
+
+    function updateAnalytics() {
+        loader.style.display = 'block';
+        const bounds = map.getBounds();
+        const boundsStr = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+        const apiUrl = `/api/analytics/?bounds=${boundsStr}`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                loader.style.display = 'none';
+
+                // Update stats
+                const totalProps = document.getElementById('total-properties');
+                const avgSale = document.getElementById('avg-sale-price');
+                const avgRent = document.getElementById('avg-rent-price');
+
+                totalProps.textContent = data.total_properties_in_view;
+                avgSale.textContent = formatCurrency(data.avg_sale_price);
+                avgRent.textContent = formatCurrency(data.avg_rent_price);
+
+                // Dynamic color feedback
+                avgSale.style.color = data.avg_sale_price > 5000000 ? '#198754' : '#dc3545';
+                avgRent.style.color = data.avg_rent_price > 30000 ? '#198754' : '#dc3545';
+
+                // Update category chart
+                const labels = data.category_distribution.map(item =>
+                    item.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                );
+                const counts = data.category_distribution.map(item => item.count);
+                const ctx = document.getElementById('categoryChart').getContext('2d');
+
+                if (categoryChart) {
+                    categoryChart.data.labels = labels;
+                    categoryChart.data.datasets[0].data = counts;
+                    categoryChart.update();
+                } else {
+                    categoryChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: counts,
+                                backgroundColor: ['#0d6efd', '#6c757d', '#198754', '#ffc107', '#dc3545', '#0dcaf0'],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top' },
+                            }
+                        }
+                    });
+                }
+
+                // Add property markers
+                markersLayer.clearLayers();
+                data.properties.forEach(p => {
+                    const marker = L.marker([p.lat, p.lng])
+                        .bindPopup(`<strong>${p.name}</strong><br>₹${p.sale_price.toLocaleString()}`)
+                        .addTo(markersLayer);
+                });
+            })
+            .catch(() => { loader.style.display = 'none'; });
+    }
+
+    map.on('moveend', updateAnalytics);
+    updateAnalytics();
+});
+</script>
+{% endblock extra_js %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us{% endblock %}
+
+{% block extra_head %}
+<style>
+.contact-card {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    padding: 2rem;
+    margin-top: 2rem;
+}
+.contact-list li {
+    margin-bottom: 0.8rem;
+}
+.social-icons a {
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: #555;
+    transition: color 0.3s;
+}
+.social-icons a:hover {
+    color: #007bff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="contact-card bg-white">
+            <h2 class="card-title mb-3">Contact Us</h2>
+            <hr>
+            <p class="lead">We'd love to hear from you. Whether you have questions about features, trials, pricing, or anything else, our team is ready to assist.</p>
+
+            <h4 class="mt-4">Get in Touch</h4>
+            <ul class="list-unstyled contact-list">
+                <li><strong>Email:</strong> <a href="mailto:support@geosmartpms.com">support@geosmartpms.com</a></li>
+                <li><strong>Phone:</strong> <a href="tel:+918310994522">+91 8310994522</a></li>
+                <li><strong>Address:</strong> 123 Tech Park, Bengaluru, India</li>
+            </ul>
+
+            <p class="mt-3">You can also find us on social media:</p>
+            <div class="social-icons">
+                <a href="#" target="_blank"><i class="fab fa-facebook"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+
+            <!-- Optional contact form -->
+            <hr class="mt-4">
+            <h4>Send Us a Message</h4>
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_name" class="form-label">Name</label>
+                    <input type="text" name="name" id="id_name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">Email</label>
+                    <input type="email" name="email" id="id_email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="id_message" class="form-label">Message</label>
+                    <textarea name="message" id="id_message" class="form-control" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Optional: Add JS for form validation or success message -->
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Homepage{% endblock %}
+
+{% block extra_head %}
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    body {
+        background: linear-gradient(135deg, #eef2f3, #8e9eab);
+        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    h1.display-5 {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .lead {
+        color: #666;
+    }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        background: #fff;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -75%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(120deg, rgba(255, 255, 255, 0.3), transparent);
+        transform: skewX(-25deg);
+        transition: left 0.7s ease;
+    }
+
+    .card:hover::before {
+        left: 125%;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .card-body i {
+        transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .card-hover:hover i {
+        transform: scale(1.2);
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .card-text {
+        font-size: 0.95rem;
+    }
+
+    .section-divider {
+        border: none;
+        height: 2px;
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        width: 80%;
+        margin: 1.5rem auto;
+        border-radius: 2px;
+    }
+
+    .welcome-section {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="welcome-section mx-auto mb-4">
+        <h1 class="display-5">👋 Welcome, {{ request.user.first_name|default:request.user.username }}!</h1>
+        <p class="lead">Manage your properties and track your performance with ease.</p>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="row g-4 justify-content-center">
+        <!-- My Properties -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'my_properties' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 text-center shadow-sm p-3 card-hover">
+                    <div class="card-body">
+                        <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                        <h4 class="card-title">My Properties</h4>
+                        <p class="card-text text-muted">
+                            Add, edit, and manage your property listings effortlessly.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'owner_dashboard' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 text-center shadow-sm p-3 card-hover">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                        <h4 class="card-title">Owner Dashboard</h4>
+                        <p class="card-text text-muted">
+                            Gain insights into your property performance and visitor trends.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

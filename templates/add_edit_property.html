@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Property{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    body {
+        background: linear-gradient(135deg, #eef2f3, #8e9eab);
+    }
+
+    .card {
+        background: rgba(255,255,255,0.9);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+
+    #map {
+        height: 400px;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    input.form-control, select.form-select, textarea.form-control {
+        background: rgba(255,255,255,0.85);
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+    input.form-control:focus, select.form-select:focus, textarea.form-control:focus {
+        border-color: #2575fc;
+        box-shadow: 0 0 8px rgba(37, 117, 252, 0.3);
+    }
+
+    .details-form {
+        display: none;
+        padding: 1rem 0;
+        border-left: 3px solid #2575fc;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #2575fc;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-primary:hover {
+        background: #1b5dcc;
+        transform: scale(1.03);
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 150px;
+        border-radius: 0.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>Manage Property</h2>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ property_form.name.id_for_label }}" class="form-label">Property Name</label>
+                        {{ property_form.name.errors }}
+                        <input type="text" name="name" value="{{ property_form.name.value|default:'' }}" class="form-control" required id="{{ property_form.name.id_for_label }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_category" class="form-label">Category</label>
+                        {{ property_form.category.errors }}
+                        <select name="category" id="id_category" class="form-select">
+                            <option value="">Choose a Category...</option>
+                            {% for value, text in property_form.fields.category.choices %}
+                                <option value="{{ value }}" {% if property_form.category.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ property_form.address.id_for_label }}" class="form-label">Address</label>
+                        {{ property_form.address.errors }}
+                        <textarea name="address" cols="40" rows="3" class="form-control" required id="{{ property_form.address.id_for_label }}">{{ property_form.address.value|default:'' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ property_form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ property_form.description.errors }}
+                        <textarea name="description" cols="40" rows="3" class="form-control" id="{{ property_form.description.id_for_label }}">{{ property_form.description.value|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <!-- Image Inputs with Preview -->
+                    <div class="mb-3">
+                        <label for="{{ property_form.image1.id_for_label }}" class="form-label">Image 1</label>
+                        {{ property_form.image1.errors }}
+                        {{ property_form.image1 }}
+                        <div class="image-preview mt-2" id="preview1"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ property_form.image2.id_for_label }}" class="form-label">Image 2</label>
+                        {{ property_form.image2.errors }}
+                        {{ property_form.image2 }}
+                        <div class="image-preview mt-2" id="preview2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ property_form.image3.id_for_label }}" class="form-label">Image 3</label>
+                        {{ property_form.image3.errors }}
+                        {{ property_form.image3 }}
+                        <div class="image-preview mt-2" id="preview3"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ property_form.panorama_image.id_for_label }}" class="form-label">***👆🏼PROPERTY IMAGES👆🏼***</label>
+                        {{ property_form.panorama_image.errors }}
+                        {{ property_form.panorama_image }}
+                        <div class="image-preview mt-2" id="preview4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="mb-3">
+                <label>Location (Click on the map to set)</label>
+                {{ property_form.location.errors }}
+                <div id="map"></div>
+                <div style="display:none;">{{ property_form.location }}</div>
+            </div>
+
+            <hr class="my-4">
+
+            <h4>Category Specific Details</h4>
+            <div id="sale_residential" class="details-form">{{ sale_residential_form.as_p }}</div>
+            <div id="rent_residential" class="details-form">{{ rent_residential_form.as_p }}</div>
+            <div id="land_plot" class="details-form">{{ land_plot_form.as_p }}</div>
+            <div id="rent_commercial" class="details-form">{{ rent_commercial_form.as_p }}</div>
+            <div id="sale_commercial" class="details-form">{{ sale_commercial_form.as_p }}</div>
+            <div id="pg_guest_house" class="details-form">{{ pg_guest_house_form.as_p }}</div>
+
+            <button type="submit" class="btn btn-primary mt-3">Save Property</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Map ---
+    const locationInput = document.getElementById('id_location');
+    if (locationInput) {
+        let lat = 12.9716, lon = 77.5946, zoom = 11;
+        const initialLocation = locationInput.value;
+        if (initialLocation && initialLocation.includes('POINT')) {
+            const parts = initialLocation.replace('POINT (', '').replace(')', '').split(' ');
+            lon = parseFloat(parts[0]); lat = parseFloat(parts[1]); zoom = 15;
+        }
+        const map = L.map('map').setView([lat, lon], zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let marker = L.marker([lat, lon]).addTo(map);
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            locationInput.value = `POINT(${e.latlng.lng} ${e.latlng.lat})`;
+        });
+    }
+
+    // --- Category Specific Forms ---
+    const categorySelect = document.getElementById('id_category');
+    const detailForms = document.querySelectorAll('.details-form');
+    function toggleDetailForms() {
+        if (!categorySelect) return;
+        const selectedCategory = categorySelect.value;
+        detailForms.forEach(formDiv => {
+            formDiv.style.display = 'none';
+            formDiv.querySelectorAll('input, select, textarea').forEach(input => input.disabled = true);
+        });
+        if (selectedCategory) {
+            const selectedFormDiv = document.getElementById(selectedCategory);
+            if (selectedFormDiv) {
+                selectedFormDiv.style.display = 'block';
+                selectedFormDiv.querySelectorAll('input, select, textarea').forEach(input => input.disabled = false);
+            }
+        }
+    }
+    if (categorySelect) categorySelect.addEventListener('change', toggleDetailForms);
+    toggleDetailForms();
+
+    // --- Image Previews ---
+    function setupImagePreview(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        if (input && preview) {
+            input.addEventListener('change', function() {
+                preview.innerHTML = '';
+                const file = input.files[0];
+                if (file) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    preview.appendChild(img);
+                }
+            });
+        }
+    }
+    setupImagePreview('id_image1', 'preview1');
+    setupImagePreview('id_image2', 'preview2');
+    setupImagePreview('id_image3', 'preview3');
+    setupImagePreview('id_panorama_image', 'preview4');
+});
+</script>
+{% endblock %}

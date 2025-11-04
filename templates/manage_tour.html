@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Manage 3D Tour – {{ property.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+    body {
+        background-color: #f5f5dc; /* beige background */
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .page-header {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+
+    /* Glassy Cards */
+    .card {
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 1rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+        background: rgba(255, 255, 255, 0.4) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+        color: #222;
+    }
+
+    .card-body label {
+        color: #222;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #ff7e5f, #feb47b);
+        border: none;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #feb47b, #ff7e5f);
+        transform: translateY(-2px);
+    }
+
+    .scene-item {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: .6rem;
+        color: #333;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+    }
+
+    .scene-item:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    .scene-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #ff7e5f;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-right: 1rem;
+}
+
+.scene-thumbnail:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 126, 95, 0.8), 0 6px 12px rgba(0,0,0,0.25);
+}
+
+
+    .scene-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .badge-success {
+        background: linear-gradient(90deg, #00c853, #4caf50);
+        color: #fff;
+    }
+
+    .back-link {
+        color: #ff7e5f;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    .lead {
+        color: #555;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Manage 3D Tour for: {{ property.name }}</h2>
+    <p class="lead">Add 360° scenes and link them together to build your virtual property tour.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm sticky-top">
+            <div class="card-header">
+                <h4 class="h5 mb-0"><i class="fa-solid fa-plus"></i> Add a New Scene</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary mt-3">
+                            <i class="fa-solid fa-circle-plus"></i> Add Scene
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="h5 mb-0"><i class="fa-solid fa-vr-cardboard"></i> Existing Scenes ({{ scenes.count }})</h4>
+            </div>
+            <div class="card-body">
+                {% for scene in scenes %}
+                    <div class="scene-item mb-3 justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="scene-thumbnail">
+                                {% if scene.image %}
+                                    <img src="{{ scene.image.url }}" alt="{{ scene.scene_name }}">
+                                {% elif scene.scene_image %}
+                                    <img src="{{ scene.scene_image.url }}" alt="{{ scene.scene_name }}">
+                                {% elif scene.panorama_image %}
+                                    <img src="{{ scene.panorama_image.url }}" alt="{{ scene.scene_name }}">
+                                {% else %}
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2991/2991119.png" alt="Default Scene">
+                                {% endif %}
+                            </div>
+                            <div>
+                                <strong>{{ scene.scene_name }}</strong>
+                                {% if scene.is_first_scene %}
+                                    <span class="badge badge-success ms-2">Start Scene</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{% url 'manage_scene_hotspots' scene.id %}" class="btn btn-light btn-sm">
+                            <i class="fa-solid fa-link"></i> Manage Hotspots
+                        </a>
+                    </div>
+                {% empty %}
+                    <p class="text-dark">No scenes added yet. Use the form to create your first 360° scene.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 text-center">
+    <a href="{% url 'my_properties' %}" class="back-link">&laquo; Back to My Properties</a>
+</div>
+{% endblock %}

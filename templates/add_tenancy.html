@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Add Tenant to {{ property.name }}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root{
+            --bg:#f6f8fa;
+            --card:#ffffff;
+            --accent:#28a745;
+            --muted:#6c757d;
+            --danger:#dc3545;
+            --radius:10px;
+            --gap:1rem;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+        html,body{height:100%}
+        body{
+            margin:0;
+            background:linear-gradient(180deg, var(--bg), #eef2f5);
+            padding:2rem;
+            color:#222;
+        }
+        .container{
+            max-width:720px;
+            margin:0 auto;
+        }
+        .card{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:0 6px 20px rgba(20,30,40,0.08);
+            overflow:hidden;
+        }
+        .card-header{
+            padding:1.25rem 1.5rem;
+            border-bottom:1px solid #eef0f2;
+            background:linear-gradient(90deg,#f8fafb,#ffffff);
+        }
+        .card-body{padding:1.25rem 1.5rem}
+        h1.h5{margin:0;font-size:1.1rem}
+        form{display:block}
+        .form-row{margin-bottom:var(--gap)}
+        label{display:block;margin-bottom:.35rem;font-weight:600}
+        .control-wrap input[type="text"],
+        .control-wrap input[type="number"],
+        .control-wrap input[type="email"],
+        .control-wrap input[type="date"],
+        .control-wrap input[type="tel"],
+        .control-wrap select,
+        .control-wrap textarea{
+            width:100%;
+            box-sizing:border-box;
+            padding:.6rem .75rem;
+            border:1px solid #d7dbe0;
+            border-radius:8px;
+            font-size:0.97rem;
+            background:linear-gradient(180deg,#fff,#fbfdff);
+            transition:box-shadow .12s, border-color .12s, transform .06s;
+        }
+        .control-wrap input:focus,
+        .control-wrap select:focus,
+        .control-wrap textarea:focus{
+            outline: none;
+            border-color: #8bd09b;
+            box-shadow: 0 6px 20px rgba(40,167,69,0.08);
+            transform: translateY(-1px);
+        }
+        .help-text{font-size:.86rem;color:var(--muted);margin-top:.35rem}
+        .errors{margin-top:.35rem;color:var(--danger);font-size:.88rem}
+        .field-error .control-wrap input,
+        .field-error .control-wrap select,
+        .field-error .control-wrap textarea{
+            border-color: var(--danger);
+            box-shadow: none;
+        }
+        .actions{
+            padding:1rem 1.5rem;
+            border-top:1px solid #eef0f2;
+            display:flex;
+            gap:.75rem;
+            justify-content:flex-end;
+            background:linear-gradient(180deg,#fff,#fbfdff);
+        }
+        button.primary{
+            background:linear-gradient(90deg,var(--accent),#20c997);
+            color:white;border:0;padding:.6rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;
+        }
+        button.ghost{background:transparent;border:1px solid #d7dbe0;padding:.55rem .9rem;border-radius:8px;cursor:pointer}
+        .muted-link{color:var(--muted);text-decoration:none}
+        /* checkbox row */
+        .checkbox-row{display:flex;align-items:center;gap:.5rem}
+        .checkbox-row input[type="checkbox"]{width:1.05rem;height:1.05rem}
+        /* small screens */
+        @media (max-width:520px){
+            .actions{flex-direction:column;align-items:stretch}
+            button.primary{width:100%}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" role="region" aria-labelledby="page-title">
+            <div class="card-header">
+                <h1 id="page-title" class="h5">Add Tenant to: {{ property.name }}</h1>
+                <p class="help-text" style="margin-top:.45rem">Fill required fields and press Save.</p>
+            </div>
+
+            <div class="card-body">
+                {# non-field errors #}
+                {% if form.non_field_errors %}
+                    <div class="errors" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {# render hidden fields first (csrf already output) #}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+
+                    {# visible fields with per-field errors and help text - do not modify widgets here #}
+                    {% for field in form.visible_fields %}
+                        <div class="form-row{% if field.errors %} field-error{% endif %}">
+                            {# checkboxes have a different alignment #}
+                            {% if field.field.widget.input_type|default:"" == "checkbox" %}
+                                <div class="checkbox-row">
+                                    {{ field }} 
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                </div>
+                                {% if field.help_text %}
+                                    <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="errors">
+                                        {% for err in field.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:#d9534f">*</span>{% endif %}</label>
+                                <div class="control-wrap">
+                                    {{ field }}
+                                </div>
+                                {% if field.help_text %}
+                                    <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="errors">
+                                        {% for err in field.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="actions">
+                        <a href="{% url 'manage_tenants' property.id %}" class="muted-link ghost" style="display:inline-flex;align-items:center;padding:.5rem .9rem;border-radius:8px;text-decoration:none">Cancel</a>
+                        <button type="submit" class="primary">Save Tenancy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <p style="text-align:center;margin-top:.8rem;font-size:.9rem;color:var(--muted)">
+            Tip: required fields are marked with <span style="color:#d9534f">*</span>.
+        </p>
+    </div>
+
+    <script>
+        // autofocus the first text control
+        (function(){
+            try{
+                var form = document.querySelector('form');
+                if(!form) return;
+                var first = form.querySelector('input[type="text"], input[type="email"], input:not([type]), textarea, select');
+                if(first) first.focus();
+
+                // simple textarea autosize for any rendered textarea
+                function autosize(el){
+                    el.style.height = 'auto';
+                    el.style.height = (el.scrollHeight) + 'px';
+                }
+                var areas = form.querySelectorAll('textarea');
+                areas.forEach(function(t){
+                    autosize(t);
+                    t.addEventListener('input', function(){ autosize(t); });
+                });
+            }catch(e){
+                // silent
+                console && console.debug && console.debug(e);
+            }
+        })();
+    </script>
+</body>
+</html>

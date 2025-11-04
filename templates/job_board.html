@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Job Board{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .card-title {
+        font-weight: 600;
+        color: #2575fc;
+    }
+    .card-subtitle {
+        font-weight: 500;
+        color: #6a11cb;
+    }
+    .card-text strong {
+        color: #333;
+    }
+    .btn-dashboard {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: background 0.3s, transform 0.2s;
+    }
+    .btn-dashboard:hover {
+        background: linear-gradient(90deg, #2575fc, #6a11cb);
+        transform: translateY(-2px);
+    }
+    .alert-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2><i class="fas fa-clipboard-list me-2"></i>Open Maintenance Jobs</h2>
+    <p>Browse available jobs from property owners.</p>
+    <hr>
+
+    {% for job in open_jobs %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-building me-1"></i>Job at: {{ job.property.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-user me-1"></i>Owner: {{ job.property.owner.username }}</h6>
+                <p class="card-text"><i class="fas fa-file-alt me-1"></i><strong>Description:</strong> {{ job.description }}</p>
+                <p class="card-text">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt me-1"></i>Posted on: {{ job.submitted_at|date:"Y-m-d" }} | 
+                        <i class="fas fa-info-circle me-1"></i>Status: {{ job.status }}
+                    </small>
+                </p>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> There are currently no open jobs. Please check back later.
+        </div>
+    {% endfor %}
+
+    <a href="{% url 'vendor_dashboard' %}" class="btn-dashboard mt-3"><i class="fas fa-arrow-left me-1"></i>Back to Dashboard</a>
+</div>
+{% endblock %}

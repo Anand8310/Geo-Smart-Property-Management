@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Homepage{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- ICONS: flaticon + fontawesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    #map {
+        height: calc(100vh - 56px);
+        width: 100vw;
+    }
+
+    .ui-container {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        padding: 12px 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        font-size: 0.9rem;
+        color: #333;
+    }
+
+    .filter-bar {
+        top: 10px;
+        left: 10px;
+        width: 250px;
+    }
+
+    .search-ui {
+        bottom: 80px;
+        left: 10px;
+        width: 250px;
+    }
+
+    .filter-bar strong {
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+
+    .filter-bar strong i {
+        color: #007bff;
+        margin-right: 6px;
+    }
+
+    #filter-btn {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: #fff;
+        font-weight: bold;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    #filter-btn:hover {
+        background: linear-gradient(90deg, #2575fc, #6a11cb);
+    }
+
+    input#radius, select.form-select {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: 0.3s;
+    }
+
+    input#radius:focus, select.form-select:focus {
+        border-color: #6a11cb;
+        box-shadow: 0 0 8px rgba(106,17,203,0.2);
+    }
+
+    .leaflet-popup-content {
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .leaflet-popup-content a {
+        text-decoration: none;
+        color: #2575fc;
+        font-weight: bold;
+    }
+
+    .leaflet-popup-content a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="position-relative">
+    <!-- Filter Panel -->
+    <div class="ui-container filter-bar">
+        <strong><i class="fas fa-filter"></i> Filter Properties</strong>
+        <div>
+            <label for="category_filter"><i class="fas fa-layer-group"></i> Category:</label>
+            <select id="category_filter" class="form-select form-select-sm">
+                <option value="all">All Categories</option>
+                <option value="sale_residential">🏠 For Sale: Houses & Apartments</option>
+                <option value="rent_residential">🏢 For Rent: Houses & Apartments</option>
+                <option value="land_plot">🌳 Lands & Plots</option>
+                <option value="rent_commercial">🏬 For Rent: Shops & Offices</option>
+                <option value="sale_commercial">🏣 For Sale: Shops & Offices</option>
+                <option value="pg_guest_house">🛏️ PG & Guest Houses</option>
+            </select>
+            <button id="filter-btn" class="btn btn-sm w-100 mt-2">Apply Filter</button>
+        </div>
+    </div>
+
+    <!-- Radius Search -->
+    <div class="ui-container search-ui">
+        <label for="radius"><i class="fas fa-location-dot"></i> Search Radius (km):</label>
+        <input type="number" id="radius" value="5" min="1" class="form-control form-control-sm">
+        <small><i class="fas fa-map-marker-alt text-danger"></i> Click map to search in radius.</small>
+    </div>
+
+    <div id="map"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const userIsStaff = {{ is_staff_user|yesno:"true,false" }};
+    const map = L.map('map', { zoomControl: false }).setView([12.9716, 77.5946], 12);
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let propertyLayer = L.geoJSON().addTo(map);
+    let searchLayer = L.layerGroup().addTo(map);
+    let schoolLayer = L.layerGroup();
+    let hospitalLayer = L.layerGroup();
+    let metroLayer = L.layerGroup();
+
+    // ICONS
+    const icons = {
+        school: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3081/3081559.png', iconSize: [32, 32] }),
+        hospital: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/8615/8615822.png', iconSize: [32, 32] }),
+        metro: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3448/3448623.png', iconSize: [32, 32] }),
+        sale_residential: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/616/616408.png', iconSize: [32, 32] }),
+        rent_residential: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/616/616490.png', iconSize: [32, 32] }),
+        land_plot: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/4222/4222019.png', iconSize: [32, 32] }),
+        rent_commercial: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3448/3448609.png', iconSize: [32, 32] }),
+        sale_commercial: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3081/3081523.png', iconSize: [32, 32] }),
+        pg_guest_house: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/235/235861.png', iconSize: [32, 32] }),
+    };
+
+    const overlayMaps = {
+        "🏠 Properties": propertyLayer,
+        "🏫 Schools": schoolLayer,
+        "🏥 Hospitals": hospitalLayer,
+        "🚇 Metro Stations": metroLayer
+    };
+    L.control.layers(null, overlayMaps, { position: 'topright' }).addTo(map);
+
+    function fetchProperties() {
+        const category = document.getElementById('category_filter').value;
+        let url = `/api/properties/?category=${category}`;
+        const lastSearch = searchLayer.getLayers();
+        if (lastSearch.length > 0) {
+            const center = lastSearch[0].getLatLng();
+            const radius = lastSearch[0].getRadius() / 1000;
+            url += `&lat=${center.lat}&lon=${center.lng}&radius=${radius}`;
+        }
+        fetch(url).then(res => res.json()).then(data => {
+            propertyLayer.clearLayers();
+            L.geoJSON(data, {
+                pointToLayer: (feature, latlng) => {
+                    const type = feature.properties.category || 'sale_residential';
+                    return L.marker(latlng);
+                    icon: new L.Icon.Default()
+                },
+                onEachFeature: (feature, layer) => {
+                    const detailUrl = `/property/${feature.id}/`;
+                    let popupContent = `<b>${feature.properties.name}</b><br>${feature.properties.address}<br><br>`;
+                    if (!userIsStaff) {
+                        popupContent += `<a href="${detailUrl}">View Details</a>`;
+                    }
+                    layer.bindPopup(popupContent);
+                }
+            }).addTo(propertyLayer);
+        });
+    }
+    fetchProperties();
+
+    fetch('/api/pois/').then(res => res.json()).then(data => {
+        L.geoJSON(data, {
+            pointToLayer: (feature, latlng) => {
+                let icon;
+                if (feature.properties.poi_type === 'school') icon = icons.school;
+                else if (feature.properties.poi_type === 'hospital') icon = icons.hospital;
+                else if (feature.properties.poi_type === 'metro') icon = icons.metro;
+                return L.marker(latlng, { icon: icon });
+            },
+            onEachFeature: (feature, layer) => {
+                layer.bindPopup(feature.properties.name);
+                if (feature.properties.poi_type === 'school') schoolLayer.addLayer(layer);
+                else if (feature.properties.poi_type === 'hospital') hospitalLayer.addLayer(layer);
+                else if (feature.properties.poi_type === 'metro') metroLayer.addLayer(layer);
+            }
+        });
+    });
+
+    map.on('click', function(e) {
+        const lat = e.latlng.lat, lon = e.latlng.lng;
+        const radius = document.getElementById('radius').value;
+        searchLayer.clearLayers();
+        L.circle([lat, lon], { radius: radius * 1000, color: '#6a11cb', fillOpacity: 0.1 }).addTo(searchLayer);
+        fetchProperties();
+    });
+
+    document.getElementById('filter-btn').addEventListener('click', function() {
+        searchLayer.clearLayers();
+        fetchProperties();
+    });
+});
+</script>
+{% endblock extra_js %}

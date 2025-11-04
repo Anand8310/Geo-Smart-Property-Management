@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Vendor Homepage{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body {
+    background: linear-gradient(135deg, #eef2f3, #8e9eab);
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+h1.display-5 { font-weight: 600; color: #333; }
+.lead { color: #555; }
+.card { border-radius: 1rem; background: rgba(255,255,255,0.85); box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.3s ease-in-out; position: relative; overflow: hidden; }
+.card::before { content: ''; position: absolute; top: 0; left: -75%; width: 50%; height: 100%; background: linear-gradient(120deg, rgba(255,255,255,0.3), transparent); transform: skewX(-25deg); transition: left 0.7s ease; }
+.card:hover::before { left: 125%; }
+.card-hover:hover { transform: translateY(-8px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+.card-body { padding: 2rem 1.5rem; }
+.card-body i { transition: transform 0.3s ease, color 0.3s ease; }
+.card-hover:hover i { transform: scale(1.2); }
+.card-title { font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+.card-text { font-size: 0.95rem; color: #555; }
+hr { border: none; height: 2px; background: linear-gradient(to right, #6a11cb, #2575fc); border-radius: 2px; margin: 1.5rem 0; width: 80%; margin-left: auto; margin-right: auto; }
+a.text-decoration-none:hover { text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="mb-4">
+        <h1 class="display-5">👋 Welcome, {{ request.user.first_name|default:request.user.username }}!</h1>
+        <p class="lead">This is your central hub. Find new work or manage your assigned jobs.</p>
+    </div>
+
+    <hr>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Public Job Board -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'job_board' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm p-3 card-hover">
+                    <div class="card-body">
+                        <i class="fas fa-search-dollar fa-3x text-success mb-3"></i>
+                        <h4 class="card-title">Public Job Board</h4>
+                        <p class="card-text">Browse all available maintenance jobs from property owners.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- My Assigned Jobs -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'vendor_assigned_jobs' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm p-3 card-hover">
+                    <div class="card-body">
+                        <i class="fas fa-clipboard-list fa-3x text-primary mb-3"></i>
+                        <h4 class="card-title">My Assigned Jobs</h4>
+                        <p class="card-text">View and manage the jobs that have been assigned to you.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- My Profile -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'vendor_dashboard' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm p-3 card-hover">
+                    <div class="card-body">
+                        <i class="fas fa-user-edit fa-3x text-info mb-3"></i>
+                        <h4 class="card-title">My Profile</h4>
+                        <p class="card-text">Update your company details and services offered.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}My Tenancy{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="fw-bold text-primary mb-3">
+        <i class="fas fa-file-contract me-2"></i> My Tenancy History
+    </h2>
+    <p class="text-muted mb-4">Your current and past leases visualized in a timeline.</p>
+
+    {% if tenancies %}
+    <div class="timeline">
+        {% for tenancy in tenancies %}
+        <div class="timeline-item {% if tenancy.is_active %}active-tenancy{% else %}past-tenancy{% endif %}">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content card shadow-sm card-hover p-2">
+                <div class="card-header d-flex justify-content-between align-items-center py-1 px-2 {% if tenancy.is_active %}bg-gradient-success{% else %}bg-gradient-secondary{% endif %} text-white">
+                    <h6 class="mb-0">{{ tenancy.property.name }}</h6>
+                    {% if tenancy.is_active %}
+                        <span class="badge bg-white text-success fw-bold">Active</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark fw-bold">Past</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-2">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            {% if tenancy.property.image1 %}
+                                <img src="{{ tenancy.property.image1.url }}" class="img-fluid rounded shadow-sm img-hover-sm" alt="{{ tenancy.property.name }}">
+                            {% else %}
+                                <div class="placeholder-img-sm rounded shadow-sm text-center d-flex align-items-center justify-content-center text-muted">
+                                    <i class="fas fa-image fa-lg"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <p class="card-text mb-1"><strong>Address:</strong> {{ tenancy.property.address }}</p>
+                            <p class="card-text mb-2">
+                                <small class="text-muted">
+                                    Lease: {{ tenancy.start_date }} to {{ tenancy.end_date }}
+                                </small>
+                            </p>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="{% url 'property_detail' tenancy.property.id %}" class="btn btn-gradient-primary btn-sm fw-bold">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                                {% if not tenancy.is_active %}
+                                    <a href="{% url 'add_review' tenancy.property.id %}" class="btn btn-gradient-secondary btn-sm fw-bold">
+                                        <i class="fas fa-star me-1"></i> Review
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="alert alert-info shadow-sm text-center">
+            <i class="fas fa-info-circle me-2"></i> You do not have any active or past tenancies.
+        </div>
+    {% endif %}
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary mt-3 fw-bold">
+        <i class="fas fa-arrow-left me-2"></i> Back to Map
+    </a>
+</div>
+
+<style>
+/* Timeline container */
+.timeline {
+    position: relative;
+    margin-left: 15px;
+    padding-left: 15px;
+    border-left: 2px solid #ddd;
+}
+
+/* Timeline item */
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -10px;
+    top: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ddd;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    transition: background 0.3s;
+}
+
+.active-tenancy .timeline-marker {
+    background: #28a745;
+    border-color: #fff;
+}
+
+.past-tenancy .timeline-marker {
+    background: #6c757d;
+    border-color: #fff;
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Image hover effect - smaller */
+.img-hover-sm {
+    max-height: 100px;
+    object-fit: cover;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.img-hover-sm:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/* Placeholder small image */
+.placeholder-img-sm {
+    height: 100px;
+    background: #f0f0f0;
+}
+
+/* Gradient badges */
+.bg-gradient-success {
+    background: linear-gradient(90deg, #28a745, #7ce07c) !important;
+    color: white !important;
+}
+
+.bg-gradient-secondary {
+    background: linear-gradient(90deg, #6c757d, #a0a0a0) !important;
+    color: white !important;
+}
+
+/* Gradient buttons */
+.btn-gradient-primary {
+    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    color: white;
+    border: none;
+    transition: 0.3s;
+}
+
+.btn-gradient-primary:hover {
+    background: linear-gradient(90deg, #2575fc, #6a11cb);
+}
+
+.btn-gradient-secondary {
+    background: linear-gradient(90deg, #ff6a00, #ee0979);
+    color: white;
+    border: none;
+    transition: 0.3s;
+}
+
+.btn-gradient-secondary:hover {
+    background: linear-gradient(90deg, #ee0979, #ff6a00);
+}
+
+/* Card header text */
+.card-header h6 {
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+    }
+    .timeline-marker {
+        left: 0;
+        top: -5px;
+    }
+}
+</style>
+{% endblock %}

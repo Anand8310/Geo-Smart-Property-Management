@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Requests{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f7fc;
+    }
+
+    h2 {
+        color: #2575fc;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+
+    .card-body h5 {
+        font-weight: 600;
+        color: #4e54c8;
+    }
+
+    .card-text {
+        color: #495057;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.45rem 0.8rem;
+        border-radius: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        border: none;
+        font-weight: 600;
+        transition: transform 0.2s, background 0.3s;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #2575fc, #6a11cb);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(90deg, #ff6a00, #ee0979);
+        border: none;
+        color: white;
+        font-weight: 600;
+        transition: transform 0.2s, background 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(90deg, #ee0979, #ff6a00);
+        transform: translateY(-2px);
+    }
+
+    .card-footer {
+        background: linear-gradient(90deg, #d9e2ff, #f0f4ff);
+        font-weight: 500;
+        color: #333;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+    }
+
+    a {
+        text-decoration: none;
+        color: #2575fc;
+        font-weight: 500;
+    }
+
+    a:hover {
+        text-decoration: underline;
+        color: #6a11cb;
+    }
+
+    .alert-info {
+        background: linear-gradient(90deg, #e0f7fa, #b2ebf2);
+        border-left: 5px solid #00acc1;
+        color: #006064;
+        font-weight: 500;
+    }
+
+    .status-icon {
+        margin-right: 5px;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2><i class="fas fa-tools me-2"></i>Maintenance Requests for Your Properties</h2>
+    <hr>
+
+    {% for req in requests %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="card-title"><i class="fas fa-home me-2"></i>Property: {{ req.property.name }}</h5>
+                        <p class="card-text">{{ req.description }}</p>
+                        <p class="card-text"><small class="text-muted"><i class="fas fa-user me-1"></i>Submitted by: {{ req.tenant.username }}</small></p>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        {% if req.status == 'Completed' %}
+                            <span class="badge bg-success fs-6"><i class="fas fa-check-circle status-icon"></i>Work Completed</span>
+                        {% else %}
+                            <a href="{% url 'job_detail_owner' req.id %}" class="btn btn-primary"><i class="fas fa-eye me-1"></i>View & Manage</a>
+                        {% endif %}
+                        {% if req.status == 'Completed' and req.assigned_vendor %}
+                            <a href="{% url 'add_vendor_review' req.id %}" class="btn btn-secondary"><i class="fas fa-star me-1"></i>Leave a Review for Vendor</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="card-footer text-muted mb-0 mt-3">
+                    <i class="fas fa-info-circle me-1"></i>Status: {{ req.status }}
+                </p>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>There are no maintenance requests for your properties.
+        </div>
+    {% endfor %}
+
+    <a href="{% url 'owner_dashboard' %}">&laquo; Back to Dashboard</a>
+</div>
+{% endblock %}

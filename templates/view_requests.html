@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}My Maintenance Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <h2 class="text-primary fw-bold mb-3 mb-md-0">
+            <i class="fas fa-tools me-2"></i> My Maintenance Requests
+        </h2>
+        <a href="{% url 'submit_request' %}" class="btn btn-gradient-primary text-white fw-bold">
+            <i class="fas fa-plus-circle me-1"></i> Submit New Request
+        </a>
+    </div>
+
+    <div class="row g-3">
+        {% for req in requests %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm request-card animate-card">
+                    <div class="card-header d-flex justify-content-between align-items-center" 
+                         style="background: linear-gradient(90deg, #6a11cb, #2575fc); color:white;">
+                        <strong>{{ req.property.name }}</strong>
+                        <span class="badge 
+                            {% if req.status == 'Completed' %}badge-completed
+                            {% elif req.status in 'In Progress Assigned Pending Approval' %}badge-pending
+                            {% else %}badge-default
+                            {% endif %} py-2 px-3 shadow-sm">
+                            {{ req.status }}
+                        </span>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <blockquote class="blockquote mb-3 flex-grow-1">
+                            <p>{{ req.description }}</p>
+                            <footer class="blockquote-footer">
+                                Submitted on <cite title="Source Title">{{ req.submitted_at|date:"F d, Y" }}</cite>
+                            </footer>
+                        </blockquote>
+
+                        {% if req.status == 'Pending Approval' %}
+                            <form action="{% url 'tenant_confirm_completion' req.id %}" method="post" class="mt-auto">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-gradient-success text-white fw-bold w-100">
+                                    <i class="fas fa-check-circle me-1"></i> Confirm Work Complete
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center py-4 shadow-sm">
+                    <i class="fas fa-info-circle me-2"></i> You have not submitted any maintenance requests yet.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* Card Hover & Animation */
+    .request-card {
+        border: none;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .request-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+    }
+
+    /* Fade-in Animation */
+    @keyframes fadeSlideUp {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-card {
+        animation: fadeSlideUp 0.6s ease forwards;
+    }
+
+    /* Stagger the animation delay for multiple cards */
+    .row.g-3 > .col-12:nth-child(1) .animate-card { animation-delay: 0.1s; }
+    .row.g-3 > .col-12:nth-child(2) .animate-card { animation-delay: 0.2s; }
+    .row.g-3 > .col-12:nth-child(3) .animate-card { animation-delay: 0.3s; }
+    .row.g-3 > .col-12:nth-child(4) .animate-card { animation-delay: 0.4s; }
+    .row.g-3 > .col-12:nth-child(5) .animate-card { animation-delay: 0.5s; }
+
+    /* Gradient Buttons */
+    .btn-gradient-primary {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        border: none;
+        transition: 0.3s;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(90deg, #2575fc, #6a11cb);
+    }
+
+    .btn-gradient-success {
+        background: linear-gradient(90deg, #28a745, #85e085);
+        border: none;
+        transition: 0.3s;
+    }
+    .btn-gradient-success:hover {
+        background: linear-gradient(90deg, #85e085, #28a745);
+    }
+
+    /* Animated Status Badges */
+    .badge-completed {
+        background-color: #28a745;
+        color: white;
+        box-shadow: 0 0 8px rgba(40,167,69,0.7);
+        animation: glowGreen 1.5s infinite alternate;
+    }
+
+    @keyframes glowGreen {
+        0% { box-shadow: 0 0 5px rgba(40,167,69,0.5); }
+        100% { box-shadow: 0 0 15px rgba(40,167,69,0.9); }
+    }
+
+    .badge-pending {
+        background-color: #17a2b8;
+        color: white;
+        animation: pulseBlue 1.5s infinite;
+    }
+
+    @keyframes pulseBlue {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    .badge-default {
+        background-color: #6c757d;
+        color: white;
+        opacity: 0.8;
+    }
+
+    /* Blockquote Styling */
+    blockquote p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #444;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 767px) {
+        .card-header {
+            font-size: 0.95rem;
+        }
+
+        blockquote p {
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

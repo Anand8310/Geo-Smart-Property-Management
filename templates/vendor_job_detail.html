@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Job Detail{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+    .card-title {
+        font-weight: 600;
+        color: #2575fc;
+    }
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-select:focus {
+        border-color: #2575fc;
+        box-shadow: 0 0 8px rgba(37,117,252,0.2);
+        outline: none;
+    }
+    .btn-success {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        border: none;
+        font-weight: bold;
+        transition: background 0.3s, transform 0.2s;
+    }
+    .btn-success:hover {
+        background: linear-gradient(90deg, #20c997, #28a745);
+        transform: translateY(-2px);
+    }
+    a {
+        text-decoration: none;
+        color: #2575fc;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2><i class="fas fa-clipboard-list me-2"></i>Job Details for: {{ job.property.name }}</h2>
+    <hr>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><i class="fas fa-map-marker-alt me-2"></i><strong>Address:</strong> {{ job.property.address }}</p>
+            <p><i class="fas fa-user me-2"></i><strong>Submitted by:</strong> {{ job.tenant.username }}</p>
+            <p><i class="fas fa-align-left me-2"></i><strong>Description:</strong> {{ job.description|linebreaks }}</p>
+            <p><i class="fas fa-info-circle me-2"></i><strong>Current Status:</strong> {{ job.status }}</p>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h4 class="card-title"><i class="fas fa-edit me-2"></i>Update Job Status</h4>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-2">
+                    <select name="status" class="form-select">
+                        {% if job.status == 'Assigned' %}
+                            <option value="In Progress"><i class="fas fa-play me-1"></i>Start Work (In Progress)</option>
+                        {% elif job.status == 'In Progress' %}
+                            <option value="Pending Approval"><i class="fas fa-check me-1"></i>Mark as Complete (Pending Tenant Approval)</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success mt-2"><i class="fas fa-sync-alt me-2"></i>Update Status</button>
+            </form>
+        </div>
+    </div>
+    <br>
+    <a href="{% url 'vendor_assigned_jobs' %}"><i class="fas fa-arrow-left me-1"></i>Back to Assigned Jobs</a>
+</div>
+{% endblock %}

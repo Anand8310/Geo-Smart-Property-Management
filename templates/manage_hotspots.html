@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Hotspots – {{ scene.scene_name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+<style>
+    body { background-color: #f5f0e1; }
+    #panorama {
+        width: 100%;
+        height: 500px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .card { border-radius: 12px; background: rgba(255,255,255,0.95); box-shadow: 0 4px 16px rgba(0,0,0,0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.15); }
+    .card-header { font-weight: 600; background: #007bff; color: #fff; border-bottom: 1px solid #006ae1; }
+
+    .lead { color: #555; }
+    #coords-display { font-weight: 500; color: #444; background: #e8f0fe; padding: 10px; border-radius: 8px; border: 1px solid #cce0ff; }
+
+    .scene-hotspot { padding: 10px; border-bottom: 1px solid #eee; border-radius: 8px; transition: 0.2s; }
+    .scene-hotspot.highlight { background-color: #e8f0fe; }
+    .scene-hotspot strong { font-size: 1rem; }
+
+    .pitch-yaw-badge { background: #007bff; color: #fff; font-size: 0.8rem; padding: 2px 6px; border-radius: 6px; margin-left: 4px; }
+
+    .btn-primary { background: linear-gradient(90deg, #6a11cb, #2575fc); border: none; transition: 0.3s; }
+    .btn-primary:hover { background: linear-gradient(90deg, #2575fc, #6a11cb); transform: translateY(-1px); }
+
+    input[readonly].form-control { background-color: #e9ecef; cursor: not-allowed; }
+
+    .back-link { display: inline-block; margin-top: 20px; font-weight: 600; color: #007bff; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+
+    @media(max-width: 768px){ #panorama { height: 300px; } }
+
+    /* Temporary hotspot (red) */
+    .custom-hotspot {
+        width: 12px;
+        height: 12px;
+        background: red;
+        border: 2px solid black;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+
+    /* Existing hotspots (blue) */
+    .existing-hotspot {
+        width: 25px;
+        height: 25px;
+        background: rgba(0, 123, 255, 0.7);
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 8px rgba(0,123,255,0.9);
+        transition: transform 0.2s ease;
+    }
+    .existing-hotspot:hover { transform: scale(1.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>Manage Hotspots</h2>
+    <p class="lead">Editing tour for <strong>{{ scene.property.name }}</strong> &gt; <strong>{{ scene.scene_name }}</strong></p>
+    <p>Click anywhere on the 360° image below to get the (Pitch, Yaw) coordinates for a new hotspot.</p>
+</div>
+
+<div id="panorama"></div>
+<div id="coords-display">Click on the scene to get coordinates...</div>
+
+<div class="row g-4 mt-3">
+    <div class="col-lg-5">
+        <div class="card sticky-top" style="top:20px;">
+            <div class="card-header">Add New Hotspot</div>
+            <div class="card-body">
+                <form method="post">{% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.text.id_for_label }}" class="form-label">{{ form.text.label|default:"Hotspot Text" }}</label>
+                        {{ form.text }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.target_scene.id_for_label }}" class="form-label">{{ form.target_scene.label|default:"Target Scene" }}</label>
+                        {{ form.target_scene }}
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="{{ form.pitch.id_for_label }}" class="form-label">Pitch</label>
+                            {{ form.pitch }}
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label for="{{ form.yaw.id_for_label }}" class="form-label">Yaw</label>
+                            {{ form.yaw }}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" name="add_hotspot" class="btn btn-primary mt-3">Add Hotspot</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-light text-dark">Existing Hotspots in this Scene</div>
+            <div class="card-body">
+                {% for hotspot in hotspots %}
+                <div id="hotspot-list-item-{{ hotspot.id }}" class="scene-hotspot d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-map-pin me-2 text-danger"></i>
+                        <strong>{{ hotspot.text }}</strong> 
+                        (links to: {{ hotspot.target_scene.scene_name }})
+                        <span class="pitch-yaw-badge">Pitch: {{ hotspot.pitch|floatformat:2 }}</span>
+                        <span class="pitch-yaw-badge">Yaw: {{ hotspot.yaw|floatformat:2 }}</span>
+                    </div>
+                    <form method="post" onsubmit="return confirm('Delete this hotspot?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="hotspot_id" value="{{ hotspot.id }}">
+                        <button type="submit" name="delete_hotspot" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                {% empty %}<p>No hotspots have been added yet.</p>{% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'manage_tour' scene.property.id %}" class="back-link">&laquo; Back to All Scenes</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Prepare existing hotspots for Pannellum
+    const existingHotspots = [
+        {% for hotspot in hotspots %}
+        {
+            id: "hotspot-{{ hotspot.id }}",
+            pitch: {{ hotspot.pitch }},
+            yaw: {{ hotspot.yaw }},
+            cssClass: "existing-hotspot",
+            createTooltipFunc: function(hotSpotDiv) {
+                hotSpotDiv.title = "{{ hotspot.text|escapejs }} (links to: {{ hotspot.target_scene.scene_name|escapejs }})";
+            },
+            clickHandlerFunc: function(evt, args) {
+                const el = document.getElementById(`hotspot-list-item-${args.id}`);
+                if(el){
+                    el.scrollIntoView({ behavior:'smooth', block:'center' });
+                    document.querySelectorAll('.scene-hotspot').forEach(e=>e.classList.remove('highlight'));
+                    el.classList.add('highlight');
+                    setTimeout(()=>el.classList.remove('highlight'),2500);
+                }
+            },
+            clickHandlerArgs: { id: "{{ hotspot.id }}" }
+        },
+        {% endfor %}
+    ];
+
+    const viewer = pannellum.viewer('panorama', {
+        type: "equirectangular",
+        panorama: "{{ scene.panorama_image.url }}",
+        autoLoad: true,
+        showControls: true,
+        compass: true,
+        hotSpots: existingHotspots
+    });
+
+    const TEMP_HOTSPOT_ID = 'temp-hotspot';
+    const pitchInput = document.getElementById('{{ form.pitch.id_for_label }}');
+    const yawInput = document.getElementById('{{ form.yaw.id_for_label }}');
+    if(pitchInput) pitchInput.readOnly = true;
+    if(yawInput) yawInput.readOnly = true;
+
+    viewer.on('load', function() {
+
+        function handleSelect(event){
+            const coords = viewer.mouseEventToCoords(event);
+            if(!coords) return;
+            const [pitch, yaw] = coords;
+
+            if(pitchInput && yawInput){
+                pitchInput.value = pitch.toFixed(4);
+                yawInput.value = yaw.toFixed(4);
+            }
+
+            const display = document.getElementById('coords-display');
+            if(display){
+                display.innerHTML = `Selected Coords - <strong>Pitch:</strong> ${pitch.toFixed(4)}, <strong>Yaw:</strong> ${yaw.toFixed(4)}`;
+            }
+
+            viewer.removeHotSpot(TEMP_HOTSPOT_ID);
+            viewer.addHotSpot({
+                id: TEMP_HOTSPOT_ID,
+                pitch: pitch,
+                yaw: yaw,
+                cssClass: 'custom-hotspot',
+                createTooltipFunc: function(el){ el.title='New Hotspot Location'; }
+            });
+        }
+
+        viewer.on('mousedown', handleSelect);
+        viewer.on('touchstart', handleSelect);
+    });
+
+});
+</script>
+{% endblock %}

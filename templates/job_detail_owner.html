@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Job Details{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .card-header {
+        font-weight: 600;
+        font-size: 1.25rem;
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .badge-status {
+        font-size: 0.9rem;
+        padding: 0.4em 0.7em;
+        border-radius: 0.5rem;
+    }
+
+    .badge-submitted { background-color: #ffc107; color: #212529; }
+    .badge-in-progress { background-color: #17a2b8; color: white; }
+    .badge-completed { background-color: #28a745; color: white; }
+
+    .btn-success {
+        background: linear-gradient(90deg, #28a745, #218838);
+        border: none;
+        transition: transform 0.2s;
+    }
+    .btn-success:hover { transform: translateY(-2px); }
+
+    a.back-link {
+        display: inline-block;
+        margin-top: 1rem;
+        font-weight: 500;
+        color: #6a11cb;
+    }
+    a.back-link:hover { text-decoration: underline; color: #2575fc; }
+
+    p strong { display: inline-flex; align-items: center; }
+    p strong i { margin-right: 6px; color: #6a11cb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2><i class="fas fa-clipboard-list me-2"></i>Job Details for: {{ job.property.name }}</h2>
+    <hr>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong><i class="fas fa-user"></i>Submitted by:</strong> {{ job.tenant.username }}</p>
+            <p><strong><i class="fas fa-calendar-alt"></i>Date:</strong> {{ job.submitted_at|date:"Y-m-d" }}</p>
+            <p><strong><i class="fas fa-align-left"></i>Description:</strong></p>
+            <p>{{ job.description|linebreaks }}</p>
+            <p>
+                <strong><i class="fas fa-info-circle"></i>Current Status:</strong> 
+                <span class="badge-status 
+                    {% if job.status == 'Submitted' %}badge-submitted{% elif job.status == 'In Progress' %}badge-in-progress{% elif job.status == 'Completed' %}badge-completed{% endif %}">
+                    {{ job.status }}
+                </span>
+            </p>
+
+            {% if job.assigned_vendor %}
+                <p><strong><i class="fas fa-user-tie"></i>Assigned To:</strong> {{ job.assigned_vendor.username }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if job.status == 'Submitted' %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h4 class="card-title"><i class="fas fa-user-cog me-2"></i>Assign to a Vendor</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success"><i class="fas fa-check me-2"></i>Assign Vendor</button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <a href="{% url 'owner_dashboard' %}" class="back-link"><i class="fas fa-arrow-left me-1"></i>Back to Dashboard</a>
+</div>
+{% endblock %}

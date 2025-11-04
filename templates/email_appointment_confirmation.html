@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Appointment Confirmation</title>
+</head>
+<body>
+    <h2>Your Viewing Appointment is Confirmed!</h2>
+    <p>Hello {{ tenant_name }},</p>
+    <p>This is a confirmation that your request to view the property <strong>{{ property_name }}</strong> has been approved.</p>
+    <p><strong>Appointment Time:</strong> {{ appointment_time }}</p>
+    <p>The property owner, {{ owner_name }}, will meet you at the location. If you need to reschedule, please contact them at: {{ owner_email }}.</p>
+    <p>Thank you!</p>
+</body>
+</html>

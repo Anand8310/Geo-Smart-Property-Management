@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Review {{ property.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .rating-stars { display: flex; gap: 0.5rem; cursor: pointer; }
+    .star { font-size: 1.5rem; color: #ddd; }
+    .star.selected { color: #ffc107; }
+    .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: none; }
+    .btn-submit { background-color:#007bff; border-color:#007bff; transition:.3s; }
+    .btn-submit:hover { background-color:#0056b3; border-color:#0056b3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'property_detail' property.id %}">{{ property.name }}</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Write Review</li>
+        </ol>
+      </nav>
+
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0"><i class="fas fa-star"></i> Write a Review for {{ property.name }}</h2>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Share your experience to help others.</p>
+          <hr>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <ul>
+              {% for field in form %}{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}
+              {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+              <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}{% if field.field.required %}*{% endif %}</label>
+              {% if field.name == 'rating' %}
+              <div class="rating-stars" id="rating-stars">
+                {% for i in "12345"|make_list %}<span class="star" data-value="{{ i }}">★</span>{% endfor %}
+              </div>
+              {{ field.as_hidden }}
+              {% else %}{{ field }}{% endif %}
+              {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'property_detail' property.id %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+              <button type="submit" class="btn btn-primary btn-submit"><i class="fas fa-paper-plane"></i> Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const stars = document.querySelectorAll('.star');
+  const ratingInput = document.getElementById('{{ form.rating.id_for_label }}');
+  stars.forEach((star, i) => star.onclick = () => {
+    ratingInput.value = i+1;
+    stars.forEach(s => s.classList.remove('selected'));
+    for(let j=0;j<=i;j++) stars[j].classList.add('selected');
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

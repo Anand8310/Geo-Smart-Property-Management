@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Expenses for {{ property.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+    .card { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    h4 { margin-bottom: 15px; }
+    .table thead th { background-color: #f0f0f0; }
+    .table tbody tr:hover { background-color: #f9f9f9; }
+    .btn-primary { background: linear-gradient(90deg, #6a11cb, #2575fc); border: none; }
+    .btn-primary:hover { background: linear-gradient(90deg, #2575fc, #6a11cb); }
+    .container { margin-top: 50px; }
+    .expense-icon { width: 20px; height: 20px; margin-right: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-3">Manage Expenses for: {{ property.name }}</h2>
+    <p class="text-muted">Track all costs associated with this property, from maintenance to taxes.</p>
+    <hr>
+
+    <div class="row g-4">
+        <!-- Add New Expense -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title">Add New Expense</h4>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="fas fa-plus-circle me-2"></i> Add Expense
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense History -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Expense History</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense.date }}</td>
+                                    <td>
+                                        {% if expense.category == 'maintenance' %}
+                                            <i class="fas fa-tools expense-icon text-primary"></i>
+                                        {% elif expense.category == 'tax' %}
+                                            <i class="fas fa-file-invoice-dollar expense-icon text-success"></i>
+                                        {% elif expense.category == 'utility' %}
+                                            <i class="fas fa-bolt expense-icon text-warning"></i>
+                                        {% elif expense.category == 'insurance' %}
+                                            <i class="fas fa-shield-alt expense-icon text-info"></i>
+                                        {% else %}
+                                            <i class="fas fa-money-bill-wave expense-icon text-secondary"></i>
+                                        {% endif %}
+                                        {{ expense.get_category_display }}
+                                    </td>
+                                    <td>{{ expense.description }}</td>
+                                    <td class="text-end">₹{{ expense.amount }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No expenses have been recorded for this property yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'my_properties' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to My Properties
+        </a>
+    </div>
+</div>
+{% endblock %}

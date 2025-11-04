@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.name }}{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        #panorama { width: 100%; height: 400px; border-radius: .375rem; }
+        #poi-map { height: 400px; border-radius: .375rem; }
+        .image-gallery img { width: 100%; height: auto; border-radius: .375rem; margin-bottom: 1rem; }
+        .vote-buttons button { background: none; border: 1px solid #ccc; border-radius: 20px; padding: 8px 15px; cursor: pointer; }
+        .vote-buttons button.active { background-color: #007bff; color: white; border-color: #007bff; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-3">{{ property.name }}</h1>
+
+    <div class="card mb-4">
+        <div class="card-header"><h4>3D Virtual Tour</h4></div>
+        <div class="card-body p-0"><div id="panorama"></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header"><h4>Property Details</h4></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>Category:</strong> {{ property.get_category_display }}</p></div>
+                        <div class="col-md-6"><p><strong>Owner:</strong> {{ property.owner.get_full_name|default:property.owner.username }} {% if property.owner.profile.is_verified %}<span class="badge bg-primary">✔ Verified</span>{% endif %}</p></div>
+                        {% if details %}
+                            {% if property.category == 'sale_residential' %}<div class="col-md-6"><p><strong>Price:</strong> ₹{{ details.price }}</p></div>
+                            {% elif property.category == 'rent_residential' %}
+                                <div class="col-md-6"><p><strong>Monthly Rent:</strong> ₹{{ details.monthly_rent }}</p></div>
+                                <div class="col-md-6"><p><strong>Security Deposit:</strong> ₹{{ details.security_deposit }}</p></div>
+                                <div class="col-md-6"><p><strong>Furnishing:</strong> {{ details.get_furnishing_status_display }}</p></div>
+                            {% elif property.category == 'land_plot' %}
+                                <div class="col-md-6"><p><strong>Price:</strong> ₹{{ details.price }}</p></div>
+                                <div class="col-md-6"><p><strong>Plot Area:</strong> {{ details.plot_area }}</p></div>
+                            {% elif property.category == 'rent_commercial' %}
+                                <div class="col-md-6"><p><strong>Monthly Rent:</strong> ₹{{ details.monthly_rent }}</p></div>
+                                <div class="col-md-6"><p><strong>Square Feet:</strong> {{ details.square_feet }} sqft</p></div>
+                            {% elif property.category == 'sale_commercial' %}
+                                <div class="col-md-6"><p><strong>Price:</strong> ₹{{ details.price }}</p></div>
+                                <div class="col-md-6"><p><strong>Square Feet:</strong> {{ details.square_feet }} sqft</p></div>
+                            {% elif property.category == 'pg_guest_house' %}
+                                <div class="col-md-6"><p><strong>Price per Month:</strong> ₹{{ details.price_per_month }}</p></div>
+                                <div class="col-md-6"><p><strong>Food Included:</strong> {{ details.food_included|yesno:"Yes,No" }}</p></div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if property.description %}
+            <div class="card mb-4"><div class="card-header"><h4>Description</h4></div><div class="card-body"><p>{{ property.description|linebreaks }}</p></div></div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header"><h4>Image Gallery</h4></div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if property.image1 %}<div class="col-md-4"><img src="{{ property.image1.url }}" class="img-fluid"></div>{% endif %}
+                        {% if property.image2 %}<div class="col-md-4"><img src="{{ property.image2.url }}" class="img-fluid"></div>{% endif %}
+                        {% if property.image3 %}<div class="col-md-4"><img src="{{ property.image3.url }}" class="img-fluid"></div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><h4>Ratings & Reviews</h4></div>
+                <div class="card-body">
+                    {% if reviews %}
+                        <div class="mb-3"><strong>Average Rating: {% if average_rating %}{{ average_rating|floatformat:1 }} / 5.0 ★{% else %}No ratings yet.{% endif %}</strong><span> ({{ reviews.count }} review{{ reviews.count|pluralize }})</span></div>
+                        {% for review in reviews %}<div class="card bg-light mb-2"><div class="card-body"><h6 class="card-title">{{ review.reviewer.username }}</h6><p class="card-subtitle mb-2 text-muted">Rating: {{ review.rating }} ★</p><p class="card-text">{{ review.comment|linebreaks }}</p><small class="text-muted">Reviewed on: {{ review.created_at|date:"Y-m-d" }}</small></div></div>{% endfor %}
+                    {% else %}<p>There are no reviews for this property yet.</p>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card sticky-top">
+                <div class="card-header"><h4>Actions</h4></div>
+                <div class="card-body">
+                    {% if user.is_authenticated and not user.is_staff %}
+                        <div class="vote-buttons d-flex justify-content-center mb-3">
+                            <form action="{% url 'property_vote' property.id 'like' %}" method="post">{% csrf_token %}<button type="submit" class="{% if property in user.profile.liked_properties.all %}active{% endif %}">👍 Like ({{ property.likes }})</button></form>
+                            <form action="{% url 'property_vote' property.id 'dislike' %}" method="post">{% csrf_token %}<button type="submit" class="{% if property in user.profile.disliked_properties.all %}active{% endif %}">👎 Dislike ({{ property.dislikes }})</button></form>
+                        </div>
+                        {% if property.category|slice:":4" == 'rent' or property.category == 'pg_guest_house' %}
+                            <div class="d-grid mb-2"><button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#viewingModal">Request a Viewing</button></div>
+                        {% endif %}
+                        {% if property.category == 'rent_residential' or property.category == 'rent_commercial' %}
+                            <div class="d-grid mb-2"><form action="{% url 'apply_for_tenancy' property.id %}" method="post"><button type="submit" class="btn btn-success w-100">Apply Now</button>{% csrf_token %}</form></div>
+                        {% endif %}
+                        <div class="d-grid mb-2"><form action="{% url 'toggle_shortlist' property.id %}" method="post"><button type="submit" class="btn btn-outline-primary w-100">{% csrf_token %}{% if property in user.profile.shortlisted_properties.all %}Remove from Shortlist{% else %}Add to Shortlist{% endif %}</button></form></div>
+                    {% endif %}
+
+                    <div class="inquiry-form mt-3">
+                        <h5>Interested? Ask the Owner</h5>
+                        {% if user.is_authenticated %}<form method="post">{% csrf_token %}{{ inquiry_form.as_p }}<div class="d-grid"><button type="submit" name="content" class="btn btn-primary mt-2">Send Inquiry</button></div></form>
+                        {% else %}<p><a href="{% url 'login' %}?next={{ request.path }}">Login</a> to send an inquiry.</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>Location & Nearby Places</h4>
+            <a href="http://googleusercontent.com/maps/google.com/0{{ property.location.y }},{{ property.location.x }}" class="btn btn-sm btn-outline-primary" target="_blank">Get Directions</a>
+        </div>
+        <div class="card-body">
+            <p><strong>Address:</strong> {{ property.address }}</p>
+            <div id="poi-map"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Request a Viewing for {{ property.name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <form action="{% url 'request_viewing' property.id %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ viewing_appointment_form.requested_datetime.id_for_label }}" class="form-label">{{ viewing_appointment_form.requested_datetime.label }}</label>
+                    <input type="datetime-local" name="requested_datetime" class="form-control" required id="{{ viewing_appointment_form.requested_datetime.id_for_label }}" min="{{ min_datetime_for_form }}">
+                </div>
+                <div class="d-grid"><button type="submit" class="btn btn-primary">Submit Request</button></div>
+            </form>
+        </div>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // --- NEW 3D TOUR SCRIPT ---
+        const tourConfig = {{ tour_config|safe }};
+        if (tourConfig.default && tourConfig.default.firstScene) {
+            pannellum.viewer('panorama', {
+                "default": tourConfig.default,
+                "scenes": tourConfig.scenes,
+                "autoLoad": true,
+                "autoRotate": -2
+            });
+        }
+
+        // --- POI MAP SCRIPT ---
+        const propertyLat = {{ property.location.y }};
+        const propertyLon = {{ property.location.x }};
+        const poiMap = L.map('poi-map').setView([propertyLat, propertyLon], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(poiMap);
+        L.marker([propertyLat, propertyLon]).addTo(poiMap).bindPopup('<b>{{ property.name }}</b>').openPopup();
+
+        let schoolLayer = L.layerGroup(), hospitalLayer = L.layerGroup(), metroLayer = L.layerGroup();
+        const schoolIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3081/3081559.png', iconSize: [32, 32] });
+        const hospitalIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/8615/8615822.png', iconSize: [32, 32] });
+        const metroIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/64/3448/3448623.png', iconSize: [32, 32] });
+
+        const overlayMaps = {"Schools": schoolLayer, "Hospitals": hospitalLayer, "Metro Stations": metroLayer};
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(poiMap);
+
+        fetch('/api/pois/').then(res => res.json()).then(data => { L.geoJSON(data, {
+            pointToLayer: (feature, latlng) => { 
+                let icon;
+                if (feature.properties.poi_type === 'school') icon = schoolIcon;
+                else if (feature.properties.poi_type === 'hospital') icon = hospitalIcon;
+                else if (feature.properties.poi_type === 'metro') icon = metroIcon;
+                return L.marker(latlng, { icon: icon });
+             },
+            onEachFeature: (feature, layer) => { 
+                layer.bindPopup(feature.properties.name);
+                if (feature.properties.poi_type === 'school') schoolLayer.addLayer(layer);
+                else if (feature.properties.poi_type === 'hospital') hospitalLayer.addLayer(layer);
+                else if (feature.properties.poi_type === 'metro') metroLayer.addLayer(layer);
+             }
+        }); });
+    });
+</script>
+{% endblock %}

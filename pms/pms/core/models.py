@@ -46,3 +46,15 @@ class MaintenanceRequest(models.Model):
     def __str__(self): return f"{self.property.name} - {self.description[:30]}"
 
 # ... (You can add Invoice, Document, Conversation, and Message models here later if you wish)
+class PointOfInterest(models.Model):
+    POI_TYPE_CHOICES = [
+        ('hospital', 'Hospital'),
+        ('school', 'School'),
+        ('metro', 'Metro Station'),
+    ]
+    name = models.CharField(max_length=255)
+    poi_type = models.CharField(max_length=20, choices=POI_TYPE_CHOICES)
+    location = models.PointField()
+
+    def __str__(self):
+        return f"{self.name} ({self.get_poi_type_display()})"
